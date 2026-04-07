@@ -4,3 +4,7 @@ asyncpg
 redis
 loguru
 pydantic
+sortedcontainers
+prometheus_client
+pytest
+pytest-asyncio
