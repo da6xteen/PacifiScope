@@ -1,100 +1,120 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import React, { useEffect } from 'react';
+import MarketSelector from '../components/MarketSelector';
+import StatsBar from '../components/StatsBar';
+import OrderbookHeatmap from '../components/OrderbookHeatmap';
+import ImbalanceChart from '../components/ImbalanceChart';
+import { useWebSocket } from '../hooks/useWebSocket';
+import { useStore } from '../lib/store';
+
+export default function Dashboard() {
+  const currentSymbol = useStore((state) => state.currentSymbol);
+  const setSnapshot = useStore((state) => state.setSnapshot);
+
+  // Actually, for consistency with how Next.js dev server works with a proxy:
+  // Usually we'd use a relative URL but WebSocket needs absolute.
+  // Assuming API is at port 8000 and frontend at 3000 as per docker-compose (common setup).
+  // But let's use a more robust way:
+  const getWsUrl = () => {
+    if (!currentSymbol) return null;
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const host = window.location.hostname;
+    // In many dev setups, the WS might be on a different port than the frontend
+    // If NEXT_PUBLIC_API_URL is set, we use that as the base.
+    if (process.env.NEXT_PUBLIC_API_URL) {
+      return process.env.NEXT_PUBLIC_API_URL.replace('http', 'ws') + `/ws/live/${currentSymbol}`;
+    }
+    // Fallback to current host on port 8000 (typical for this project's API)
+    return `${protocol}//${host}:8000/ws/live/${currentSymbol}`;
+  };
+
+  const { lastMessage, isConnected } = useWebSocket(getWsUrl());
+
+  useEffect(() => {
+    if (lastMessage) {
+      setSnapshot(lastMessage);
+    }
+  }, [lastMessage, setSnapshot]);
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <div className="min-h-screen bg-[#0A0A0F] text-white flex flex-col">
+      <header className="border-b border-gray-800 bg-[#111] py-4 px-6 flex justify-between items-center">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-[#1A73E8] rounded flex items-center justify-center font-bold">P</div>
+          <h1 className="text-xl font-bold tracking-tight">PacifiScope</h1>
+        </div>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'} animate-pulse`} />
+            <span className="text-xs text-gray-400 font-mono uppercase">{isConnected ? 'Live' : 'Disconnected'}</span>
+          </div>
+        </div>
+      </header>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+      <main className="flex-1 flex flex-col max-w-[1400px] mx-auto w-full p-4 gap-4">
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="w-full md:w-64 shrink-0">
+            <MarketSelector />
+          </div>
+          <div className="flex-1">
+            <StatsBar />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="md:col-span-2 flex flex-col gap-4">
+            <div className="hidden md:block">
+              <OrderbookHeatmap />
+            </div>
+            <ImbalanceChart />
+          </div>
+          <div className="md:col-span-1 space-y-4">
+            <div className="bg-[#111] border border-gray-800 rounded-lg p-4 h-full">
+              <h3 className="text-xs text-gray-400 font-mono mb-4 uppercase tracking-wider">Market Analysis</h3>
+              <div className="space-y-6">
+                <p className="text-sm text-gray-300 leading-relaxed">
+                  Real-time orderbook footprint analysis for <span className="text-[#1A73E8] font-bold">{currentSymbol}</span>.
+                  The heatmap above shows the concentration of liquidity at various price levels.
+                  Darker intensities represent higher volume at that level.
+                </p>
+
+                <div className="p-3 bg-[#1A1A1F] border border-gray-700 rounded text-xs font-mono">
+                  <div className="flex justify-between mb-1">
+                    <span className="text-gray-500">Status:</span>
+                    <span className={isConnected ? 'text-green-500' : 'text-red-500'}>{isConnected ? 'Active' : 'Offline'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Last Message:</span>
+                    <span className="text-gray-300">{lastMessage?.ts ? new Date(lastMessage.ts).toLocaleTimeString() : 'N/A'}</span>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-gray-800">
+                  <h4 className="text-[10px] text-gray-500 font-bold uppercase mb-2">Legend</h4>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 bg-green-500 opacity-80" />
+                      <span className="text-xs text-gray-400">Bid Liquidity</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 bg-red-500 opacity-80" />
+                      <span className="text-xs text-gray-400">Ask Liquidity</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 border-t border-white border-dashed" />
+                      <span className="text-xs text-gray-400">Mid Price</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
+
+      <footer className="border-t border-gray-800 bg-[#0A0A0F] py-3 px-6 text-center">
+        <p className="text-[10px] text-gray-600 font-mono">PACIFISCOPE — REAL-TIME LIQUIDITY INTELLIGENCE</p>
       </footer>
     </div>
   );
