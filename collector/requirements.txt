@@ -1,0 +1,6 @@
+websockets
+aiohttp
+asyncpg
+redis
+loguru
+pydantic

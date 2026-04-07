@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  timescaledb:
+    image: timescale/timescaledb:latest-pg16
+    container_name: pacifiscope-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: pacifiscope
+    ports:
+      - "5432:5432"
+    volumes:
+      - timescale_data:/var/lib/postgresql/data
+      - ./db:/docker-entrypoint-initdb.d
+
+  redis:
+    image: redis:7-alpine
+    container_name: pacifiscope-redis
+    ports:
+      - "6379:6379"
+
+  collector:
+    build:
+      context: ./collector
+      dockerfile: Dockerfile
+    container_name: pacifiscope-collector
+    depends_on:
+      - timescaledb
+      - redis
+    env_file:
+      - .env
+    restart: always
+
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: pacifiscope-api
+    ports:
+      - "8000:8000"
+    depends_on:
+      - timescaledb
+      - redis
+    env_file:
+      - .env
+    restart: always
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: pacifiscope-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+    env_file:
+      - .env
+    restart: always
+
+volumes:
+  timescale_data:
