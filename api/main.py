@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from redis.asyncio import Redis
-from routes import markets, metrics, ws, health, analysis
+from routes import markets, metrics, ws, health, analysis, compare
 from contextlib import asynccontextmanager
 
 # Setup database and redis connection strings
@@ -48,5 +48,6 @@ async def root():
 app.include_router(markets.router, prefix="/api", tags=["markets"])
 app.include_router(metrics.router, prefix="/api", tags=["metrics"])
 app.include_router(analysis.router, prefix="/api/analysis", tags=["analysis"])
+app.include_router(compare.router, prefix="/api", tags=["compare"])
 app.include_router(health.router, tags=["health"])
 app.include_router(ws.router, prefix="/ws", tags=["websocket"])
