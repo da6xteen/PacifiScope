@@ -94,3 +94,70 @@ async def websocket_endpoint(websocket: WebSocket, symbol: str):
     except Exception as e:
         logger.error(f"WebSocket error for {symbol}: {e}")
         await manager.disconnect(websocket, symbol)
+
+
+class WhaleManager:
+    def __init__(self):
+        # symbol -> set of active WebSockets
+        self.active_connections: Dict[str, Set[WebSocket]] = {}
+        # symbol -> asyncio task for Redis subscription
+        self.subscription_tasks: Dict[str, asyncio.Task] = {}
+
+    async def connect(self, websocket: WebSocket, symbol: str):
+        await websocket.accept()
+        if symbol not in self.active_connections:
+            self.active_connections[symbol] = set()
+            self.subscription_tasks[symbol] = asyncio.create_task(
+                self._subscribe_to_whales(websocket, symbol)
+            )
+        self.active_connections[symbol].add(websocket)
+        logger.info(f"Client connected to Whale WS /ws/whales/{symbol}")
+
+    async def disconnect(self, websocket: WebSocket, symbol: str):
+        if symbol in self.active_connections:
+            if websocket in self.active_connections[symbol]:
+                self.active_connections[symbol].remove(websocket)
+            if not self.active_connections[symbol]:
+                del self.active_connections[symbol]
+                if symbol in self.subscription_tasks:
+                    self.subscription_tasks[symbol].cancel()
+                    del self.subscription_tasks[symbol]
+                logger.info(f"Unsubscribed from Whale Redis for {symbol}")
+
+    async def _subscribe_to_whales(self, websocket: WebSocket, symbol: str):
+        redis = websocket.app.state.redis
+        pubsub = redis.pubsub()
+        channel = f"whales:{symbol}"
+        try:
+            await pubsub.subscribe(channel)
+            async for message in pubsub.listen():
+                if message["type"] == "message":
+                    data = json.loads(message["data"])
+                    if symbol in self.active_connections:
+                        disconnected_clients = []
+                        for ws in list(self.active_connections[symbol]):
+                            try:
+                                await ws.send_json(data)
+                            except Exception:
+                                disconnected_clients.append(ws)
+                        for ws in disconnected_clients:
+                            await self.disconnect(ws, symbol)
+        except asyncio.CancelledError:
+            pass
+        finally:
+            await pubsub.unsubscribe(channel)
+            await pubsub.close()
+
+whale_manager = WhaleManager()
+
+@router.websocket("/whales/{symbol}")
+async def whale_websocket_endpoint(websocket: WebSocket, symbol: str):
+    await whale_manager.connect(websocket, symbol)
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        await whale_manager.disconnect(websocket, symbol)
+    except Exception as e:
+        logger.error(f"Whale WebSocket error for {symbol}: {e}")
+        await whale_manager.disconnect(websocket, symbol)

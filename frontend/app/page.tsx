@@ -5,6 +5,7 @@ import MarketSelector from '../components/MarketSelector';
 import StatsBar from '../components/StatsBar';
 import OrderbookHeatmap from '../components/OrderbookHeatmap';
 import ImbalanceChart from '../components/ImbalanceChart';
+import WhaleAlert from '../components/WhaleAlert';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { useStore } from '../lib/store';
 
@@ -70,7 +71,8 @@ export default function Dashboard() {
             <ImbalanceChart />
           </div>
           <div className="md:col-span-1 space-y-4">
-            <div className="bg-[#111] border border-gray-800 rounded-lg p-4 h-full">
+            <WhaleAlert />
+            <div className="bg-[#111] border border-gray-800 rounded-lg p-4">
               <h3 className="text-xs text-gray-400 font-mono mb-4 uppercase tracking-wider">Market Analysis</h3>
               <div className="space-y-6">
                 <p className="text-sm text-gray-300 leading-relaxed">
