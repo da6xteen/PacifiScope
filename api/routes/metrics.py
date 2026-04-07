@@ -43,6 +43,23 @@ async def get_historical_metrics(
         } for row in rows
     ]
 
+@router.get("/whales/{symbol}", response_model=List[Dict[str, Any]])
+async def get_recent_whales(
+    symbol: str,
+    request: Request,
+    limit: int = Query(50, ge=1, le=200)
+):
+    """Recent whale and iceberg events for a symbol."""
+    db = request.app.state.db
+    query = """
+        SELECT * FROM whale_events
+        WHERE symbol = $1
+        ORDER BY time DESC
+        LIMIT $2
+    """
+    rows = await db.fetch(query, symbol, limit)
+    return [dict(row) for row in rows]
+
 @router.get("/metrics/{symbol}/summary", response_model=Dict[str, Any])
 async def get_metrics_summary(symbol: str, request: Request):
     """Current spread, imbalance, depth levels for a symbol."""
