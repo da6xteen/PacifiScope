@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect } from 'react';
+import Link from 'next/link';
 import MarketSelector from '../components/MarketSelector';
 import StatsBar from '../components/StatsBar';
 import OrderbookHeatmap from '../components/OrderbookHeatmap';
@@ -45,7 +46,11 @@ export default function Dashboard() {
           <div className="w-8 h-8 bg-[#1A73E8] rounded flex items-center justify-center font-bold">P</div>
           <h1 className="text-xl font-bold tracking-tight">PacifiScope</h1>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-6">
+          <nav className="flex items-center gap-4 mr-2">
+            <Link href="/" className="text-sm font-bold text-[#1A73E8]">Dashboard</Link>
+            <Link href="/analysis" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Analysis</Link>
+          </nav>
           <div className="flex items-center gap-2">
             <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'} animate-pulse`} />
             <span className="text-xs text-gray-400 font-mono uppercase">{isConnected ? 'Live' : 'Disconnected'}</span>
