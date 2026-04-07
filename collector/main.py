@@ -1,6 +1,7 @@
 import asyncio
 from loguru import logger
 from ws_client import OrderbookCollector
+from metrics.imbalance import ImbalanceCalculator
 from prometheus_client import start_http_server
 
 async def main():
@@ -10,7 +11,12 @@ async def main():
     logger.info("Prometheus metrics server started on port 8001")
 
     collector = OrderbookCollector()
-    await collector.run()
+    imbalance_calc = ImbalanceCalculator()
+
+    await asyncio.gather(
+        collector.run(),
+        imbalance_calc.run()
+    )
 
 if __name__ == "__main__":
     try:
