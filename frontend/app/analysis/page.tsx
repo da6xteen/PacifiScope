@@ -43,7 +43,7 @@ const AnalysisPage = () => {
   const renderHeatmap = () => {
     if (!heatmapData?.grid) return null;
 
-    const days = Array.from(new Set(heatmapData.grid.map((d: {date: string}) => d.date))).sort().reverse();
+    const days = Array.from(new Set(heatmapData.grid.map((d: {date: string}) => d.date))).sort().reverse() as string[];
     const hours = Array.from({ length: 24 }, (_, i) => i);
 
     const rowHeight = 24; // px
