@@ -5,6 +5,7 @@ redis
 loguru
 pydantic
 sortedcontainers
+numpy
 prometheus_client
 pytest
 pytest-asyncio
