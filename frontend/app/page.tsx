@@ -2,6 +2,7 @@
 
 import React, { useEffect } from 'react';
 import Link from 'next/link';
+import useSWR from 'swr';
 import MarketSelector from '../components/MarketSelector';
 import StatsBar from '../components/StatsBar';
 import OrderbookHeatmap from '../components/OrderbookHeatmap';
@@ -11,24 +12,30 @@ import SignalFeed from '../components/SignalFeed';
 import { useWebSocket } from '../hooks/useWebSocket';
 import { useStore } from '../lib/store';
 
+// Skeleton Loaders
+import HeatmapSkeleton from '../components/skeletons/HeatmapSkeleton';
+import ChartSkeleton from '../components/skeletons/ChartSkeleton';
+
+const fetcher = (url: string) => fetch(url).then(res => res.json());
+
 export default function Dashboard() {
   const currentSymbol = useStore((state) => state.currentSymbol);
   const setSnapshot = useStore((state) => state.setSnapshot);
+  const history = useStore((state) => state.history);
+
+  // Check for Demo Mode from API
+  const { data: healthData } = useSWR('/api/health', fetcher, { refreshInterval: 5000 });
+  const isDemoMode = healthData?.mode === 'demo' || process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
 
   // Actually, for consistency with how Next.js dev server works with a proxy:
   // Usually we'd use a relative URL but WebSocket needs absolute.
-  // Assuming API is at port 8000 and frontend at 3000 as per docker-compose (common setup).
-  // But let's use a more robust way:
   const getWsUrl = () => {
     if (!currentSymbol) return null;
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const host = window.location.hostname;
-    // In many dev setups, the WS might be on a different port than the frontend
-    // If NEXT_PUBLIC_API_URL is set, we use that as the base.
     if (process.env.NEXT_PUBLIC_API_URL) {
       return process.env.NEXT_PUBLIC_API_URL.replace('http', 'ws') + `/ws/live/${currentSymbol}`;
     }
-    // Fallback to current host on port 8000 (typical for this project's API)
     return `${protocol}//${host}:8000/ws/live/${currentSymbol}`;
   };
 
@@ -48,13 +55,19 @@ export default function Dashboard() {
           <h1 className="text-xl font-bold tracking-tight">PacifiScope</h1>
         </div>
         <div className="flex items-center gap-6">
+          {isDemoMode && (
+            <div className="bg-yellow-500/10 border border-yellow-500/50 text-yellow-500 px-2 py-0.5 rounded text-[10px] font-bold tracking-widest animate-pulse">
+              DEMO MODE
+            </div>
+          )}
           <nav className="flex items-center gap-4 mr-2">
             <Link href="/" className="text-sm font-bold text-[#1A73E8]">Dashboard</Link>
             <Link href="/analysis" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">Analysis</Link>
+            <Link href="/about" className="text-sm font-medium text-gray-400 hover:text-white transition-colors">About</Link>
           </nav>
           <div className="flex items-center gap-2">
             <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'} animate-pulse`} />
-            <span className="text-xs text-gray-400 font-mono uppercase">{isConnected ? 'Live' : 'Disconnected'}</span>
+            <span className="text-xs text-gray-400 font-mono uppercase">{isConnected ? (isDemoMode ? 'Simulating' : 'Live') : 'Disconnected'}</span>
           </div>
         </div>
       </header>
@@ -72,9 +85,9 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="md:col-span-2 flex flex-col gap-4">
             <div className="hidden md:block">
-              <OrderbookHeatmap />
+              {history.length > 0 ? <OrderbookHeatmap /> : <HeatmapSkeleton />}
             </div>
-            <ImbalanceChart />
+            {history.length > 0 ? <ImbalanceChart /> : <ChartSkeleton />}
           </div>
           <div className="md:col-span-1 space-y-4">
             <SignalFeed />
@@ -91,7 +104,7 @@ export default function Dashboard() {
                 <div className="p-3 bg-[#1A1A1F] border border-gray-700 rounded text-xs font-mono">
                   <div className="flex justify-between mb-1">
                     <span className="text-gray-500">Status:</span>
-                    <span className={isConnected ? 'text-green-500' : 'text-red-500'}>{isConnected ? 'Active' : 'Offline'}</span>
+                    <span className={isConnected ? 'text-green-500' : 'text-red-500'}>{isConnected ? (isDemoMode ? 'Active' : 'Live') : 'Offline'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-500">Last Message:</span>

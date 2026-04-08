@@ -2,6 +2,7 @@
 
 import React, { memo, useMemo } from 'react';
 import { useStore } from '../lib/store';
+import StatsBarSkeleton from './skeletons/StatsBarSkeleton';
 
 const StatsBar = memo(() => {
   const lastSnapshot = useStore((state) => state.lastSnapshot);
@@ -16,9 +17,6 @@ const StatsBar = memo(() => {
     const midPrice = (bestBid + bestAsk) / 2;
     const spreadBps = ((bestAsk - bestBid) / midPrice) * 10000;
 
-    // Simplified imbalance calculation for display: (bid_vol - ask_vol) / total_vol
-    // Real formula from collector can be used if exposed in snapshot,
-    // but the snapshot here only has top 20 levels.
     const bidVol = lastSnapshot.bids.slice(0, 5).reduce((sum, level) => sum + level[1], 0);
     const askVol = lastSnapshot.asks.slice(0, 5).reduce((sum, level) => sum + level[1], 0);
     const imbalance = (bidVol - askVol) / (bidVol + askVol);
@@ -27,11 +25,11 @@ const StatsBar = memo(() => {
   }, [lastSnapshot]);
 
   if (!lastSnapshot) {
-    return <div className="h-16 flex items-center justify-center bg-[#111] animate-pulse">Loading stats...</div>;
+    return <StatsBarSkeleton />;
   }
 
   return (
-    <div className="flex flex-wrap gap-4 p-4 bg-[#111] border-b border-gray-800 text-sm font-mono">
+    <div className="flex flex-wrap gap-4 p-4 bg-[#111] border-b border-gray-800 text-sm font-mono h-[81px]">
       <div className="flex flex-col">
         <span className="text-gray-400">MID PRICE</span>
         <span className="text-white text-lg">{stats.midPrice.toFixed(2)}</span>
