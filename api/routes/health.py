@@ -1,4 +1,5 @@
 import time
+import os
 from fastapi import APIRouter, Request
 from typing import Dict, Any
 
@@ -10,6 +11,7 @@ async def health_check(request: Request):
     Check status of DB and Redis connections.
     Calculate collector_lag_ms based on the latest record in orderbook_metrics.
     """
+    demo_mode = os.getenv("DEMO_MODE", "false").lower() == "true"
     db_connected = False
     redis_connected = False
     collector_lag_ms = None
@@ -43,6 +45,7 @@ async def health_check(request: Request):
 
     return {
         "status": "healthy" if db_connected and redis_connected else "unhealthy",
+        "mode": "demo" if demo_mode else "live",
         "db_connected": db_connected,
         "redis_connected": redis_connected,
         "collector_lag_ms": collector_lag_ms

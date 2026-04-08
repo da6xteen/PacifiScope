@@ -1,52 +1,42 @@
-# PacifiScope
+# 🌊 PacifiScope
 
-Real-Time Orderbook Imbalance Analytics Dashboard for the Pacifica Hackathon (Track 2).
+[![Python Version](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue.svg)](https://www.python.org/)
+[![Next.js Version](https://img.shields.io/badge/next.js-14.2.35-black.svg)](https://nextjs.org/)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Hackathon Track](https://img.shields.io/badge/Hackathon-Track%202-orange.svg)](https://pacifica.fi)
 
-## Architecture
+**PacifiScope** is a high-performance, real-time orderbook imbalance analytics dashboard built specifically for the Pacifica ecosystem. It provides traders with deep visibility into market microstructures, liquidity concentrations, and whale behavior through a sophisticated data pipeline and intuitive visualizations.
 
-```mermaid
-graph TD
-    subgraph "External"
-        Exchange[Pacifica Exchange WS]
-    end
+## 🚀 Key Features
 
-    subgraph "Backend"
-        Collector[WebSocket Collector]
-        API[FastAPI Backend]
-        Redis[Redis Pub/Sub]
-        DB[(TimescaleDB)]
-    end
+- **Real-Time Heatmap (±25 Levels):** Visualizes orderbook depth and liquidity concentration updates every 500ms.
+- **Weighted Imbalance Ratio:** Calculates a proximity-weighted ratio using a custom distance-to-mid formula.
+- **Whale & Iceberg Detection:** Automated alerts for orders exceeding $50k USD and high-persistence "iceberg" patterns.
+- **Alpha Correlation Engine:** Historical analysis of the relationship between imbalance and future price movement.
+- **Multi-Market Comparison:** Side-by-side view of multiple symbols with synchronized charting.
+- **Demo Mode:** Full system replay functionality using historical data for offline demos.
 
-    subgraph "Frontend"
-        Dashboard[Next.js Dashboard]
-    end
+## 🏗️ Architecture
 
-    Exchange --> Collector
-    Collector --> Redis
-    Collector --> DB
-    API --> DB
-    API --> Redis
-    Dashboard --> API
-```
+PacifiScope is built as a robust microservices architecture:
 
-### Components
+- **Collector (Python):** High-frequency WebSocket ingestion from Pacifica, metric computation, and TimescaleDB persistence.
+- **API (FastAPI):** Asynchronous backend handling REST queries and WebSocket relay for real-time frontend updates.
+- **Frontend (Next.js 14):** Modern React dashboard with Server Components, SWR for data fetching, and Recharts for visualization.
+- **TimescaleDB:** Time-series optimized PostgreSQL extension for high-performance market data analytics.
+- **Redis:** Low-latency Pub/Sub for sub-100ms real-time data propagation.
 
-- **Collector (Python/WebSockets)**: Connects to Pacifica Exchange, calculates real-time orderbook imbalance, and stores it in TimescaleDB while broadcasting via Redis Pub/Sub.
-- **API (FastAPI)**: Provides REST endpoints for historical analytics and WebSockets for real-time updates.
-- **Database (TimescaleDB)**: Specialized time-series database for high-performance analytics.
-- **Cache (Redis)**: Used for low-latency real-time data distribution.
-- **Frontend (Next.js/Tailwind)**: Interactive dashboard using Recharts for visualization.
+## 📸 Screenshots
 
-## Service Ports
+| Dashboard Overview | Historical Analysis |
+|:---:|:---:|
+| ![Dashboard Placeholder](https://via.placeholder.com/400x250?text=Dashboard+Screenshot) | ![Analysis Placeholder](https://via.placeholder.com/400x250?text=Analysis+Screenshot) |
 
-| Service       | Port |
-|---------------|------|
-| Frontend      | 3000 |
-| API           | 8000 |
-| TimescaleDB   | 5432 |
-| Redis         | 6379 |
+## 🎥 Demo Video
 
-## Quick Start
+[Watch the Demo on Loom](https://www.loom.com/share/placeholder)
+
+## 🛠️ Quick Start
 
 1. **Clone the repository**
    ```bash
@@ -66,3 +56,18 @@ graph TD
 
 4. **Access the dashboard**
    Open your browser at `http://localhost:3000`.
+
+*To run in Demo Mode, set `DEMO_MODE=true` in your `.env` file.*
+
+## 📈 Service Ports
+
+| Service       | Port | Description |
+|---------------|------|-------------|
+| Frontend      | 3000 | Next.js Dashboard |
+| API           | 8000 | FastAPI REST/WS |
+| TimescaleDB   | 5432 | Persistence Layer |
+| Redis         | 6379 | Real-time Bus |
+| Prometheus    | 8001 | Collector Metrics |
+
+---
+Built with ❤️ by the Pacific Builders Team for the Pacifica Hackathon 2024.

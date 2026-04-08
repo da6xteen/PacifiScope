@@ -1,20 +1,28 @@
 import React from 'react';
 import useSWR from 'swr';
 import { useStore } from '../lib/store';
+import SignalSkeleton from './skeletons/SignalSkeleton';
+
+interface Signal {
+  direction: 'LONG' | 'SHORT';
+  time: string;
+  confidence: number;
+  rules_fired: string[];
+}
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function SignalFeed() {
   const currentSymbol = useStore((state) => state.currentSymbol);
 
-  const { data: signals, error } = useSWR(
+  const { data: signals, error } = useSWR<Signal[]>(
     currentSymbol ? `/api/signals?symbol=${currentSymbol}&min_confidence=30` : null,
     fetcher,
     { refreshInterval: 30000 } // Refresh every 30s
   );
 
   if (error) return <div className="text-red-500 text-xs p-4">Failed to load signals</div>;
-  if (!signals) return <div className="text-gray-500 text-xs p-4 animate-pulse">Scanning for signals...</div>;
+  if (!signals) return <SignalSkeleton />;
 
   return (
     <div className="bg-[#111] border border-gray-800 rounded-lg overflow-hidden">
@@ -30,7 +38,7 @@ export default function SignalFeed() {
           </div>
         ) : (
           <div className="divide-y divide-gray-900">
-            {signals.map((signal: any, idx: number) => (
+            {signals.map((signal: Signal, idx: number) => (
               <div key={idx} className="p-3 hover:bg-[#16161a] transition-colors">
                 <div className="flex justify-between items-start mb-1">
                   <div className="flex items-center gap-2">
