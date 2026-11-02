@@ -70,4 +70,5 @@ PacifiScope is built as a robust microservices architecture:
 | Prometheus    | 8001 | Collector Metrics |
 
 ---
-Built with ❤️ by the Pacific Builders Team for the Pacifica Hackathon 2024.
+Built with ❤️ by the Pacific Builders Team for the Pacifica Hackathon 2026
+.
