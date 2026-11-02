@@ -26,15 +26,6 @@ PacifiScope is built as a robust microservices architecture:
 - **TimescaleDB:** Time-series optimized PostgreSQL extension for high-performance market data analytics.
 - **Redis:** Low-latency Pub/Sub for sub-100ms real-time data propagation.
 
-## 📸 Screenshots
-
-| Dashboard Overview | Historical Analysis |
-|:---:|:---:|
-| ![Dashboard Placeholder](https://via.placeholder.com/400x250?text=Dashboard+Screenshot) | ![Analysis Placeholder](https://via.placeholder.com/400x250?text=Analysis+Screenshot) |
-
-## 🎥 Demo Video
-
-[Watch the Demo on Loom](https://www.loom.com/share/placeholder)
 
 ## 🛠️ Quick Start
 
